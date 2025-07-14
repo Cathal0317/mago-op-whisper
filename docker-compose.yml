@@ -16,4 +16,4 @@ services:
       - SYS_ADMIN
     ports:
       - 9005:59005
-    entrypoint: ["bash", "./scripts/run_app.sh"]
+    entrypoint: ["bash", "/deepsaturn/egs/whisper/scripts/run_app.sh"]
