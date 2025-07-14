@@ -97,5 +97,10 @@ docker compose up -d
 - [Service URL](http://localhost:9005/whisper/docs)
 
 ## GitHub Actions
+👉 [GitHub Actions](docs/github_actions.md)
 
+<<<<<<< HEAD
 👉 [GitHub Actions](docs/github_actions.md) 
+=======
+hello
+>>>>>>> c69dff375f51d0e55690a1e90a6e4918dda7bb59
