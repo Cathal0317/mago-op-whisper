@@ -2,7 +2,7 @@ services:
    test-whisper:
     image: test-whisper
     container_name:  test-whisper
-    runtime: nvidia
+    #runtime: nvidia
     environment:
       - LC_ALL=C.UTF-8
     build:

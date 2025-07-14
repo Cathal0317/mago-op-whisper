@@ -62,3 +62,108 @@
 
     # 기본 실행 명령어 (필요에 따라 변경)
     CMD ["bash"]
+
+
+
+
+
+    # # ---------- 0. 베이스 ----------
+#    FROM ubuntu:22.04
+
+#    # ---------- 1. 빌드 인자 ----------
+#    ARG USERNAME=devuser        # ← USER 대신 USERNAME 사용
+#    ARG HOST_UID=501
+#    ARG HOST_GID=20
+#    ARG NODE_MAJOR=22
+#    ARG TZ=Asia/Seoul
+   
+#    ENV DEBIAN_FRONTEND=noninteractive \
+#       TZ=${TZ}
+   
+
+#    # ---------- 2. 필요한 패키지 ----------
+#    RUN apt-get update && \
+#       apt-get install -y --no-install-recommends \
+#          build-essential git curl vim sudo tzdata \
+#          python3 python3-pip python3-venv python-is-python3 \
+#          ffmpeg \
+#          docker-cli \
+#          && rm -rf /var/lib/apt/lists/*
+
+#    # ---------- 2-B. docker compose plugin ----------
+#    RUN apt-get update && apt-get install -y curl gnupg && \
+#       curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+#          | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg && \
+#       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] \
+#          https://download.docker.com/linux/ubuntu jammy stable" \
+#          | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+#       apt-get update && apt-get install -y docker-compose-plugin && \
+#       rm -rf /var/lib/apt/lists/*
+   
+#    # ---------- 3. 사용자 생성 ----------
+#    RUN if ! getent group ${HOST_GID}; then \
+#          groupadd -g ${HOST_GID} hostgroup ; \
+#       fi && \
+#       useradd -u ${HOST_UID} -g ${HOST_GID} -m ${USERNAME} && \
+#       echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+   
+#    # ---------- 4. 작업 디렉터리 ----------
+#    USER ${USERNAME}
+#    WORKDIR /home/${USERNAME}/workspace
+   
+#    CMD ["bash"]
+
+# ---------- 0. 베이스 ----------
+   FROM ubuntu:22.04
+
+   # ---------- 1. 빌드 인자 ----------
+   ARG USERNAME=cyh          # 컨테이너 안 사용자
+   ARG HOST_UID=501              # 호스트 UID → 도커 실행 시 덮어씀
+   ARG HOST_GID=20               # 호스트 GID
+   ARG TZ=Asia/Seoul
+   
+   ENV DEBIAN_FRONTEND=noninteractive
+   ENV TZ=${TZ}
+   
+   # ---------- 2. 공통 패키지 + 도커 CLI/Compose ----------
+   RUN apt-get update -y && \
+      apt-get install -y --no-install-recommends \
+         sudo curl gnupg ca-certificates tzdata \
+         build-essential git vim jq\
+         python3 python3-pip python3-venv python-is-python3 \
+         ffmpeg docker-cli && \
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+         gpg --dearmor -o /usr/share/keyrings/docker.gpg && \
+      echo "deb [arch=$(dpkg --print-architecture) \
+         signed-by=/usr/share/keyrings/docker.gpg] \
+         https://download.docker.com/linux/ubuntu jammy stable" \
+         > /etc/apt/sources.list.d/docker.list && \
+      apt-get update -y && \
+      apt-get install -y docker-compose-plugin && \
+      rm -rf /var/lib/apt/lists/*
+
+   # ---------- 3-B. Gitbook CLI ----------
+    RUN apt-get update && apt-get install -y nodejs npm
+    RUN npm install -g @gitbook/cli
+   
+   # ---------- 4. 사용자 생성 / sudo 무비번 ----------
+   RUN if ! getent group ${HOST_GID}; then \
+         groupadd -g ${HOST_GID} hostgroup ; \
+      fi && \
+      useradd -m -u ${HOST_UID} -g ${HOST_GID} -s /bin/bash ${USERNAME} && \
+      usermod -aG sudo ${USERNAME} && \
+      echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} && \
+      chmod 0440 /etc/sudoers.d/${USERNAME}
+
+   # ---------- 4-B. 사용자 환경 변수 설정 ----------
+   USER ${USERNAME}
+   RUN echo 'export M2_HOME=/opt/maven' >> /home/${USERNAME}/.bashrc && \
+      echo 'export PATH=${M2_HOME}/bin:${PATH}' >> /home/${USERNAME}/.bashrc && \
+      echo 'export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:/bin/java::")' >> /home/${USERNAME}/.bashrc && \
+      echo 'export PATH=${JAVA_HOME}/bin:${PATH}' >> /home/${USERNAME}/.bashrc
+
+   # ---------- 5. 기본 셸 ----------
+   USER ${USERNAME}
+   WORKDIR /home/${USERNAME}/workspace
+   CMD ["bash"]
+   
